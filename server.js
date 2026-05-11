@@ -21,11 +21,11 @@ const db = mysql.createConnection({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    port: process.env.DB_PORT
+    port: Number(process.env.DB_PORT)
 });
 
 /* =========================
-   CONNECT DATABASE
+   CONNECT DB
 ========================= */
 db.connect((err) => {
     if (err) {
@@ -36,26 +36,18 @@ db.connect((err) => {
 });
 
 /* =========================
-   HOME ROUTE
+   HOME
 ========================= */
-const path = require("path");
-
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
+    res.send("Library API is running 🚀");
 });
 
 /* =========================
-   TEST DATABASE
+   TEST
 ========================= */
 app.get("/test", (req, res) => {
-
     db.query("SELECT 1", (err) => {
-
-        if (err) {
-            console.log(err);
-            return res.send("DB error ❌");
-        }
-
+        if (err) return res.send("DB error ❌");
         res.send("DB connected ✔");
     });
 });
@@ -65,13 +57,7 @@ app.get("/test", (req, res) => {
 ========================= */
 app.post("/register", (req, res) => {
 
-    const {
-        firstname,
-        middlename,
-        lastname,
-        username,
-        password
-    } = req.body;
+    const { firstname, middlename, lastname, username, password } = req.body;
 
     const sql = `
         INSERT INTO users
@@ -79,23 +65,13 @@ app.post("/register", (req, res) => {
         VALUES (?,?,?,?,?,?)
     `;
 
-    db.query(
-        sql,
-        [
-            firstname,
-            middlename,
-            lastname,
-            username,
-            password,
-            "student"
-        ],
+    db.query(sql,
+        [firstname, middlename, lastname, username, password, "student"],
         (err) => {
-
             if (err) {
                 console.log("REGISTER ERROR:", err);
                 return res.json({ success: false });
             }
-
             res.json({ success: true });
         }
     );
@@ -109,13 +85,7 @@ app.post("/login", (req, res) => {
     const { username, password } = req.body;
 
     const sql = `
-        SELECT
-            id,
-            firstname,
-            middlename,
-            lastname,
-            username,
-            role
+        SELECT id, firstname, middlename, lastname, username, role
         FROM users
         WHERE username=? AND password=?
     `;
@@ -152,29 +122,21 @@ app.post("/login", (req, res) => {
 ========================= */
 app.post("/books", (req, res) => {
 
-    const {
-        user_id,
-        student_id,
-        book_name,
-        date
-    } = req.body;
+    const { user_id, student_id, book_name, date } = req.body;
 
-    db.query(
-        "INSERT INTO books (user_id, student_id, book_name, date, status) VALUES (?,?,?,?,?)",
-        [
-            user_id,
-            student_id,
-            book_name,
-            date,
-            "Borrowed"
-        ],
+    const sql = `
+        INSERT INTO books
+        (user_id, student_id, book_name, date, status)
+        VALUES (?,?,?,?,?)
+    `;
+
+    db.query(sql,
+        [user_id, student_id, book_name, date, "Borrowed"],
         (err) => {
-
             if (err) {
                 console.log("BORROW ERROR:", err);
                 return res.json({ success: false });
             }
-
             res.json({ success: true });
         }
     );
@@ -194,14 +156,9 @@ app.get("/books", (req, res) => {
             books.book_name,
             books.date,
             books.status,
-            CONCAT(
-                users.firstname,' ',
-                users.middlename,' ',
-                users.lastname
-            ) AS fullname
+            CONCAT(users.firstname,' ',users.middlename,' ',users.lastname) AS fullname
         FROM books
-        JOIN users
-        ON books.user_id = users.id
+        JOIN users ON books.user_id = users.id
     `;
 
     let values = [];
@@ -212,12 +169,10 @@ app.get("/books", (req, res) => {
     }
 
     db.query(sql, values, (err, result) => {
-
         if (err) {
             console.log("GET BOOKS ERROR:", err);
             return res.json([]);
         }
-
         res.json(result);
     });
 });
@@ -233,12 +188,10 @@ app.put("/books/:id", (req, res) => {
         "UPDATE books SET status=? WHERE id=?",
         [status, req.params.id],
         (err) => {
-
             if (err) {
                 console.log("UPDATE ERROR:", err);
                 return res.json({ success: false });
             }
-
             res.json({ success: true });
         }
     );
@@ -253,12 +206,10 @@ app.delete("/books/:id", (req, res) => {
         "DELETE FROM books WHERE id=?",
         [req.params.id],
         (err) => {
-
             if (err) {
                 console.log("DELETE ERROR:", err);
                 return res.json({ success: false });
             }
-
             res.json({ success: true });
         }
     );
