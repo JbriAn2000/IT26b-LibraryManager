@@ -38,8 +38,10 @@ db.connect((err) => {
 /* =========================
    HOME ROUTE
 ========================= */
+const path = require("path");
+
 app.get("/", (req, res) => {
-    res.send("Library API is running 🚀");
+    res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 /* =========================
