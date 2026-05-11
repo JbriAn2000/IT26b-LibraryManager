@@ -7,7 +7,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Connection sa database
+/* =========================
+   DEBUG (IMPORTANT)
+========================= */
+console.log("DB_HOST:", process.env.DB_HOST);
+console.log("DB_PORT:", process.env.DB_PORT);
+
+/* =========================
+   DATABASE CONNECTION
+========================= */
 const db = mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -16,21 +24,30 @@ const db = mysql.createConnection({
     port: process.env.DB_PORT
 });
 
-db.connect(err => {
+/* =========================
+   SAFE CONNECT (NO CRASH)
+========================= */
+db.connect((err) => {
     if (err) {
         console.log("DB ERROR:", err);
     } else {
-        console.log("MySQL Connected");
+        console.log("MySQL Connected ✔");
     }
 });
+
+/* =========================
+   TEST ROUTE
+========================= */
 app.get("/test", (req, res) => {
-    db.query("SELECT 1", (err, result) => {
-        if (err) return res.send("DB error");
+    db.query("SELECT 1", (err) => {
+        if (err) return res.send("DB error ❌");
         res.send("DB connected ✔");
     });
 });
 
-//  REGISTER 
+/* =========================
+   REGISTER
+========================= */
 app.post("/register", (req, res) => {
 
     const { firstname, middlename, lastname, username, password } = req.body;
@@ -44,31 +61,24 @@ app.post("/register", (req, res) => {
     db.query(sql,
         [firstname, middlename, lastname, username, password, "student"],
         (err) => {
-
             if (err) {
                 console.log("REGISTER ERROR:", err);
                 return res.json({ success: false });
             }
-
             res.json({ success: true });
         }
     );
 });
 
-
-//  LOGIN  
+/* =========================
+   LOGIN
+========================= */
 app.post("/login", (req, res) => {
 
     const { username, password } = req.body;
 
     const sql = `
-        SELECT 
-            id,
-            firstname,
-            middlename,
-            lastname,
-            username,
-            role
+        SELECT id, firstname, middlename, lastname, username, role
         FROM users
         WHERE username=? AND password=?
     `;
@@ -81,16 +91,14 @@ app.post("/login", (req, res) => {
         }
 
         if (result.length > 0) {
-
             const user = result[0];
 
-            // i usa ang first name , middle ug last
             const fullname = `${user.firstname || ""} ${user.middlename || ""} ${user.lastname || ""}`.trim();
 
             res.json({
                 success: true,
                 user_id: user.id,
-                fullname: fullname,
+                fullname,
                 role: user.role
             });
 
@@ -100,8 +108,9 @@ app.post("/login", (req, res) => {
     });
 });
 
-
-//  BORROW BOOK 
+/* =========================
+   BORROW BOOK
+========================= */
 app.post("/books", (req, res) => {
 
     const { user_id, student_id, book_name, date } = req.body;
@@ -110,19 +119,18 @@ app.post("/books", (req, res) => {
         "INSERT INTO books (user_id, student_id, book_name, date, status) VALUES (?,?,?,?,?)",
         [user_id, student_id, book_name, date, "Borrowed"],
         (err) => {
-
             if (err) {
                 console.log("BORROW ERROR:", err);
                 return res.json({ success: false });
             }
-
             res.json({ success: true });
         }
     );
 });
 
-
-//  inner join 
+/* =========================
+   GET BOOKS
+========================= */
 app.get("/books", (req, res) => {
 
     const user_id = req.query.user_id;
@@ -157,8 +165,9 @@ app.get("/books", (req, res) => {
     });
 });
 
-
-// UPDATE 
+/* =========================
+   UPDATE BOOK
+========================= */
 app.put("/books/:id", (req, res) => {
 
     const { status } = req.body;
@@ -167,37 +176,36 @@ app.put("/books/:id", (req, res) => {
         "UPDATE books SET status=? WHERE id=?",
         [status, req.params.id],
         (err) => {
-
             if (err) {
                 console.log("UPDATE ERROR:", err);
                 return res.json({ success: false });
             }
-
             res.json({ success: true });
         }
     );
 });
 
-
-//  DELETE 
+/* =========================
+   DELETE BOOK
+========================= */
 app.delete("/books/:id", (req, res) => {
 
     db.query(
         "DELETE FROM books WHERE id=?",
         [req.params.id],
         (err) => {
-
             if (err) {
                 console.log("DELETE ERROR:", err);
                 return res.json({ success: false });
             }
-
             res.json({ success: true });
         }
     );
 });
 
-
+/* =========================
+   START SERVER
+========================= */
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
