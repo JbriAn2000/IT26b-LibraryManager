@@ -23,7 +23,12 @@ db.connect(err => {
         console.log("MySQL Connected");
     }
 });
-
+app.get("/test", (req, res) => {
+    db.query("SELECT 1", (err, result) => {
+        if (err) return res.send("DB error");
+        res.send("DB connected ✔");
+    });
+});
 
 //  REGISTER 
 app.post("/register", (req, res) => {
